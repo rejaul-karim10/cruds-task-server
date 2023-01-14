@@ -71,35 +71,75 @@ app.get("/hobbies", async (req, res) => {
 });
 
 // delete data from the database
-// delete data from the database
 app.delete("/hobbies/:id", async (req, res) => {
-    const { id } = req.params;
-    try {
-      const hobbies = await hobbiesCollection.findOne({ _id: ObjectId(id) });
-  
-      if (!hobbies?._id) {
-        res.send({
-          success: false,
-          error: "hobbies Doesn't exist",
-        });
-        return;
-      }
-  
-      const result = await hobbiesCollection.deleteOne({ _id: ObjectId(id) });
-  
-      if (result.deletedCount) {
-        res.send({
-          success: true,
-          message: `Successfully Deleted The ${hobbies.name}`,
-        }); 
-      }
-    } catch (error) {
+  const { id } = req.params;
+  try {
+    const hobbies = await hobbiesCollection.findOne({ _id: ObjectId(id) });
+
+    if (!hobbies?._id) {
       res.send({
         success: false,
-        error: error.message,
+        error: "hobbies Doesn't exist",
+      });
+      return;
+    }
+
+    const result = await hobbiesCollection.deleteOne({ _id: ObjectId(id) });
+
+    if (result.deletedCount) {
+      res.send({
+        success: true,
+        message: `Successfully Deleted`,
       });
     }
-  });
-  
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// getting single entry to make it available for update
+app.get("/entries/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const entries = await hobbiesCollection.findOne({ _id: ObjectId(id) });
+    res.send({
+      success: true,
+      data: entries,
+    });
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// updated single entry by using this endpoint
+app.patch("/entries/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await hobbiesCollection.updateOne(
+      { _id: ObjectId(id) },
+      { $set: req.body }
+    );
+
+    if (result.modifiedCount) {
+      res.send({
+        success: true,
+        message: "Successfully Updated Entry",
+      });
+    } else {
+      ("Could't Update Entry");
+    }
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 
 app.listen(port, () => console.log("Server up and running".cyan.bold));
