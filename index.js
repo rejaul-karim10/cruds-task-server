@@ -30,5 +30,27 @@ dbConnect();
 
 const hobbiesCollection = client.db("cruds-task").collection("hobbies");
 
-  
-app.listen(5000, () => console.log("Server up and running".cyan.bold));
+//endpoints
+// create hobbies using this endpoint
+app.post("/hobbies", async (req, res) => {
+  try {
+    const result = await hobbiesCollection.insertOne(req.body);
+
+    if (result.insertedId) {
+      res.send({
+        success: true,
+      });
+    } else {
+      res.send({
+        success: false,
+      });
+    }
+  } catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+    });
+  }
+});
+
+app.listen(port, () => console.log("Server up and running".cyan.bold));
