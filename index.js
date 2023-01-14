@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("colors");
 
 const app = express();
@@ -53,16 +53,15 @@ app.post("/hobbies", async (req, res) => {
   }
 });
 
-// get hobbies using this endpoint
+// get hobbies data using this endpoint
 app.get("/hobbies", async (req, res) => {
   try {
     const cursor = hobbiesCollection.find({});
-    const hobbies = await cursor.toArray()
+    const hobbies = await cursor.toArray();
     res.send({
       success: true,
-      data: hobbies
+      data: hobbies,
     });
-
   } catch (error) {
     console.log(error.name.bgRed, error.message.bold);
     res.send({
@@ -70,5 +69,37 @@ app.get("/hobbies", async (req, res) => {
     });
   }
 });
+
+// delete data from the database
+// delete data from the database
+app.delete("/hobbies/:id", async (req, res) => {
+    const { id } = req.params;
+    try {
+      const hobbies = await hobbiesCollection.findOne({ _id: ObjectId(id) });
+  
+      if (!hobbies?._id) {
+        res.send({
+          success: false,
+          error: "hobbies Doesn't exist",
+        });
+        return;
+      }
+  
+      const result = await hobbiesCollection.deleteOne({ _id: ObjectId(id) });
+  
+      if (result.deletedCount) {
+        res.send({
+          success: true,
+          message: `Successfully Deleted The ${hobbies.name}`,
+        }); 
+      }
+    } catch (error) {
+      res.send({
+        success: false,
+        error: error.message,
+      });
+    }
+  });
+  
 
 app.listen(port, () => console.log("Server up and running".cyan.bold));
