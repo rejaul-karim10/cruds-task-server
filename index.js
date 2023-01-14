@@ -53,4 +53,22 @@ app.post("/hobbies", async (req, res) => {
   }
 });
 
+// get hobbies using this endpoint
+app.get("/hobbies", async (req, res) => {
+  try {
+    const cursor = hobbiesCollection.find({});
+    const hobbies = await cursor.toArray()
+    res.send({
+      success: true,
+      data: hobbies
+    });
+
+  } catch (error) {
+    console.log(error.name.bgRed, error.message.bold);
+    res.send({
+      success: false,
+    });
+  }
+});
+
 app.listen(port, () => console.log("Server up and running".cyan.bold));
