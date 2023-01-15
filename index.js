@@ -4,6 +4,9 @@ require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("colors");
 
+// mail gun key
+const mailgun = require('mailgun-js')({apiKey: process.env.EMAIL_SEND_KEY, domain: process.env.EMAIL_SEND_DOMAIN});
+
 const app = express();
 const port = process.env.port || 5000;
 
@@ -28,68 +31,105 @@ async function dbConnect() {
 }
 dbConnect();
 
-const hobbiesCollection = client.db("cruds-task").collection("hobbies");
+// database collections
+const entriesCollection = client.db("cruds-task").collection("entries");
+
+// sending email using this endpoint
+app.post('/send-email', (req, res) => {
+  const { selectedRows } = req.body;
+
+  // Validate the selectedRows data
+  if (!Array.isArray(selectedRows)) {
+      return res.status(400).json({ error: 'Selected rows must be an array' });
+  }
+  if (selectedRows.length === 0) {
+      return res.status(400).json({ error: 'No rows selected' });
+  }
+
+  // Compose the email
+  const emailData = {
+      from: 'rkrabby86@gmail.com',
+      to: 'rejaulkarim66666@gmail.com',
+      subject: 'Selected rows data',
+      text: `The selected rows data is: ${selectedRows}`
+  };
+
+  // Send the email
+  mailgun.messages().send(emailData, (error, body) => {
+      if (error) {
+          res.status(500).send({ error: error.message });
+      } else {
+          res.send({ message: 'Email sent successfully' });
+      }
+  });
+});
+
+
 
 //endpoints
-// create hobbies using this endpoint
-app.post("/hobbies", async (req, res) => {
+// create entries using this endpoint
+app.post("/entries", async (req, res) => {
   try {
-    const result = await hobbiesCollection.insertOne(req.body);
+    const result = await entriesCollection.insertOne(req.body);
 
     if (result.insertedId) {
       res.send({
         success: true,
+        message: "Successfully Created Entry",
       });
     } else {
       res.send({
         success: false,
+        message: "Something went wrong",
       });
     }
   } catch (error) {
     console.log(error.name.bgRed, error.message.bold);
     res.send({
       success: false,
+      message: "Something went wrong",
     });
   }
 });
 
-// get hobbies data using this endpoint
-app.get("/hobbies", async (req, res) => {
+// get entries data using this endpoint
+app.get("/entries", async (req, res) => {
   try {
-    const cursor = hobbiesCollection.find({});
-    const hobbies = await cursor.toArray();
+    const cursor = entriesCollection.find({});
+    const entries = await cursor.toArray();
     res.send({
       success: true,
-      data: hobbies,
+      data: entries,
     });
   } catch (error) {
     console.log(error.name.bgRed, error.message.bold);
     res.send({
       success: false,
+      message: "Something went wrong",
     });
   }
 });
 
-// delete data from the database
-app.delete("/hobbies/:id", async (req, res) => {
+// delete data from the database using this endpoint
+app.delete("/entries/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    const hobbies = await hobbiesCollection.findOne({ _id: ObjectId(id) });
+    const entries = await entriesCollection.findOne({ _id: ObjectId(id) });
 
-    if (!hobbies?._id) {
+    if (!entries?._id) {
       res.send({
         success: false,
-        error: "hobbies Doesn't exist",
+        error: "Entries doesn't exist",
       });
       return;
     }
 
-    const result = await hobbiesCollection.deleteOne({ _id: ObjectId(id) });
+    const result = await entriesCollection.deleteOne({ _id: ObjectId(id) });
 
     if (result.deletedCount) {
       res.send({
         success: true,
-        message: `Successfully Deleted`,
+        message: `Successfully Deleted Entry`,
       });
     }
   } catch (error) {
@@ -104,7 +144,7 @@ app.delete("/hobbies/:id", async (req, res) => {
 app.get("/entries/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const entries = await hobbiesCollection.findOne({ _id: ObjectId(id) });
+    const entries = await entriesCollection.findOne({ _id: ObjectId(id) });
     res.send({
       success: true,
       data: entries,
@@ -121,7 +161,7 @@ app.get("/entries/:id", async (req, res) => {
 app.patch("/entries/:id", async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await hobbiesCollection.updateOne(
+    const result = await entriesCollection.updateOne(
       { _id: ObjectId(id) },
       { $set: req.body }
     );
@@ -141,5 +181,10 @@ app.patch("/entries/:id", async (req, res) => {
     });
   }
 });
+
+// test endpoint
+app.get('/', (req, res)=>{
+  console.log("Server in running")
+})
 
 app.listen(port, () => console.log("Server up and running".cyan.bold));
