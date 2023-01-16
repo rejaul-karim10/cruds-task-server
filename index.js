@@ -58,8 +58,8 @@ app.post('/send-email', async (req, res) => {
           selectedRowsData += `Name: ${entry.name}\nPhone: ${entry.phone}\nEmail: ${entry.email}\nHobbies: ${entry.hobbies}\n\n`;
       });
       const emailData = {
-          from: 'rejaulkarim66666@gmail.com',
-          to: 'rkrabby86@gmail.com',
+          from: ' rejaulkarim66666@gmail.com',
+          to: 'info@redpositive.in',
           subject: 'You have selected rows of data from CRUDS',
           text: `The selected data is here:\n\n${selectedRowsData}`
       };
