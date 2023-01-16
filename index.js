@@ -68,14 +68,14 @@ app.post('/send-email', async (req, res) => {
     // Send the email
     mailgun.messages().send(emailData, (error, body) => {
         if (error) {
-            res.status(500).send({ error: error.message });
+            res.send({ error: error.message });
         } else {
             res.send({ message: 'Email sent successfully' });
         }
     });
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).send({ error: err.message });
   }
 });
 
