@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("colors");
+const mongodb = require('mongodb');
 
 // mail gun key
 const mailgun = require('mailgun-js')({apiKey: process.env.EMAIL_SEND_KEY, domain: process.env.EMAIL_SEND_DOMAIN});
@@ -34,34 +35,48 @@ dbConnect();
 // database collections
 const entriesCollection = client.db("cruds-task").collection("entries");
 
-// sending email using this endpoint
-app.post('/send-email', (req, res) => {
+// sent email by using this endpoint
+app.post('/send-email', async (req, res) => {
   const { selectedRows } = req.body;
-
-  // Validate the selectedRows data
-  if (!Array.isArray(selectedRows)) {
-      return res.status(400).json({ error: 'Selected rows must be an array' });
-  }
-  if (selectedRows.length === 0) {
-      return res.status(400).json({ error: 'No rows selected' });
-  }
-
-  // Compose the email
-  const emailData = {
-      from: 'rkrabby86@gmail.com',
-      to: 'rejaulkarim66666@gmail.com',
-      subject: 'Selected rows data',
-      text: `The selected rows data is: ${selectedRows}`
-  };
-
-  // Send the email
-  mailgun.messages().send(emailData, (error, body) => {
-      if (error) {
-          res.status(500).send({ error: error.message });
-      } else {
-          res.send({ message: 'Email sent successfully' });
+  const selectedRowsObjectIds = selectedRows.map(row => new mongodb.ObjectId(row));
+  try {
+      // Find the entries in the collection that match the given ids
+      const entries = await entriesCollection.find({ _id: { $in: selectedRowsObjectIds } }).toArray();
+      if (entries.length === 0) {
+          return res.status(400).json({ error: 'No matching entries found' });
       }
-  });
+      // Extract the name, phone, email, and hobbies fields from the entries
+      const selectedData = entries.map(entry => ({
+          name: entry.name,
+          phone: entry.phone,
+          email: entry.email,
+          hobbies: entry.hobbies
+      }));
+      // Compose the email
+      let selectedRowsData = "";
+      selectedData.forEach((entry) => {
+          selectedRowsData += `Name: ${entry.name}\nPhone: ${entry.phone}\nEmail: ${entry.email}\nHobbies: ${entry.hobbies}\n\n`;
+      });
+      const emailData = {
+          from: 'rejaulkarim66666@gmail.com',
+          to: 'rkrabby86@gmail.com',
+          subject: 'You have selected rows of data from CRUDS',
+          text: `The selected data is here:\n\n${selectedRowsData}`
+      };
+
+
+    // Send the email
+    mailgun.messages().send(emailData, (error, body) => {
+        if (error) {
+            res.status(500).send({ error: error.message });
+        } else {
+            res.send({ message: 'Email sent successfully' });
+        }
+    });
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 
